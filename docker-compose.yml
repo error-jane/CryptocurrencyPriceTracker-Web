@@ -1,0 +1,19 @@
+services:
+    frontend:
+        image: frontend:latest
+        build:
+            context: .
+        ports:
+            - "8080:8080"
+        environment:
+            API_URL: http://localhost:3000/api/
+        networks:
+            - fullstack
+        volumes:
+        - .:/app
+        - /app/node_modules
+        - /app/.next
+
+networks:
+    fullstack:
+        driver: bridge
