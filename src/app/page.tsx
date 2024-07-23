@@ -1,112 +1,163 @@
-import Image from "next/image";
-
+"use client"
+import { useState, useEffect, FC } from "react";
+import Coin from "../models/coinData";
+import CryptocurrenciesService from "../services/cryptocurrenciesService";
+import Button from "../components/customButton";
+import TextField from "../components/textField";
+import { FaAngleDoubleUp, FaAngleDoubleDown, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 export default function Home() {
+  const [data, setData] = useState<Coin[]>([]);
+  const [updateNum, setUpdateNum] = useState<number>(0);
+  const cryptocurrenciesService = CryptocurrenciesService();
+
+  
+
+  const fetchData = async() =>{
+    try{
+      const rs = await cryptocurrenciesService.getData();
+      
+        // Map through the new data (rs) to update prevState
+        const newState = rs.map((coin: Coin) => {
+          for (let i = 0; i < data.length; i++) {
+            const prevCoin = data[i];
+            if (prevCoin.id === coin.id) {
+              // Update the matching coin's properties
+              return {
+                ...prevCoin,
+                price: coin.price,
+                is_up: coin.price == null || prevCoin.price == null? null : coin.price == prevCoin.price ? null : coin.price > prevCoin.price,
+              };
+            }
+          }
+          // If no match is found, return the original coin
+          return coin;
+        });
+      
+
+      setData(newState);
+      const updateNumNew: number = updateNum + 1;
+      setUpdateNum(updateNumNew);
+      console.log("jane", updateNumNew);
+    }
+    catch(error){
+      console.error(`error ${error}`);
+    }
+  }
+  
+  // // Set interval to run the task every hour
+  // const interval = setInterval(() => {
+  //     fetchData();
+  // }, 6 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
+  
+  // // Ensure interval is cleared when the process is terminated
+  // process.on('SIGINT', () => {
+  //   clearInterval(interval);
+  //   process.exit();}
+  // );
+
+
+  useEffect(() => {
+    return () =>{
+      fetchData();
+    }
+  }, []);
+
+  const [inputText, setInputText] = useState<Coin>({});
+  const [isEdit, setIsEdit] = useState<boolean>(false);
+
+  const handleInputChange = (value: string, type: string) => {
+    setInputText((prev) => {
+      return {
+        ...prev,
+        [type]: type == "price" ? parseInt(value) : value,
+      };
+    });
+  };
+
+  const handleClickAddCoin = async() => {
+    const rs = await cryptocurrenciesService.addCoin(inputText);
+    await fetchData();
+  };
+
+  const handleClickDetailCoin = async(coin: Coin) => {
+    setInputText(coin);
+    setIsEdit(!isEdit);
+  };
+
+  const handleClickEditCoin = async() => {
+    const rs = await cryptocurrenciesService.updateCoin(inputText.id!, inputText);
+    await fetchData();
+  };
+
+  const handleClickDeleteCoin = async() => {
+    const rs = await cryptocurrenciesService.deleteCoin(inputText.id!);
+    await fetchData();
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <main className="flex h-screen w-screen flex-col items-center justify-between p-10 ">
+      <div className="flex flex-row h-full w-full relative">
+        <div className="flex flex-col h-full w-2/4">
+          <div className="bg-[url('../../public/images/bg1.png')] bg-cover bg-center bg-no-repeat flex flex-col pt-8 pb-10 px-5 h-full w-1/3 rounded-2xl">
+            <div className="relative flex flex-col group z-[3] items-end w-full transition-all pt-3 hover:w-96">
+              <div className="z-[3] relative flex flex-row bg-black rounded-full h-7 py-0 px-3 items-center justify-between transition-all w-full group-hover:w-8 group-hover:px-1">
+                <span className="text-white transition-all group-hover:text-transparent group-hover:translate-x-2">Add a Coin</span>
+                <FaArrowRight className="inline-block my-2 text-white text-sm transition-all opacity-100 group-hover:opacity-0 group-hover:translate-x-1 motion-reduce:transform-none" />
+                <FaArrowLeft className="absolute right-3 translate-x-3  inline-block my-2 text-white text-sm transition-all opacity-0  group-hover:translate-x-1 group-hover:opacity-100"/>
+              </div>
+              <div className="absolute bg-white w-96 flex flex-col pt-20 pb-12 px-5 rounded-2xl left-3 top-5 transition-all opacity-0  pointer-events-none group-hover:pointer-events-auto group-hover:top-0 group-hover:opacity-100">
+              <label>Coin</label>
+            <TextField
+            placeholder="Enter your name..."
+            initialValue={inputText.name}
+            onChange={(e) => { handleInputChange(e, "name")}}
             />
-          </a>
+            <TextField
+              placeholder="Enter your symbol..."
+              initialValue={inputText.symbol}
+              onChange={(e) => { handleInputChange(e, "symbol")}}
+            />
+            <TextField
+              placeholder="Enter your price..."
+              initialValue={inputText.price?.toString()}
+              onChange={(e) => { handleInputChange(e, "price")}}
+            />
+            {isEdit?
+            <div>
+              <Button onClick={()=>{handleClickEditCoin();}} title="edit coin"></Button>
+              <Button onClick={()=>{handleClickDeleteCoin();}} title="delete coin"></Button>
+            </div>
+            :
+              <Button onClick={()=>{handleClickAddCoin();}} title="new coin"></Button>}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <div className="bg-[url('../../public/images/bg1.png')] bg-cover bg-center bg-no-repeat flex flex-col p-10 h-full w-2/4 rounded-2xl">
+          <div className="flex overflow-y-scroll overflow-x-auto flex-col p-10 gap-5 z-[1] ">
+        <Button onClick={()=>{fetchData();}} title="jane"></Button>
+        <div>{updateNum}</div>
+        {data.map((coin, index) => (
+          <div key={coin.id} className={"flex flex-row justify-between items-center rounded-full border-solid border-2 py-5 px-10"} onClick={()=>{handleClickDetailCoin(coin);}}>
+            <div className="flex flex-row gap-5 items-center">
+            {coin.is_up == null ? <FaAngleDoubleUp className="text-transparent"/> : coin.is_up ? <FaAngleDoubleUp className="text-lime-300"/> : <FaAngleDoubleDown className="text-red-400" />}
+            <div className="flex flex-col">
+              <div className="text-3xl">{coin.name}</div>
+              <div>{coin.symbol}</div>
+            </div>
+            </div>
+            <div>{coin.price}</div>
+          </div>
+        ))}
+          </div>
+        </div> 
+        <div className="absolute w-2/4 h-full p-5 content-end">
+          <div className="text-4xl gap-3 uppercase inline-block">
+            <span className="py-2 px-3 inline-block">Cryptocurrency</span>
+            <span className="py-2 px-3 inline-block">Price</span>
+            <span className="rounded-full border-solid border-2 py-2 px-3 inline-block">Tracker</span>
+          </div>
+        </div>
       </div>
     </main>
   );
