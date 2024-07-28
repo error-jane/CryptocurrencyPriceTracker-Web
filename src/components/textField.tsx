@@ -3,15 +3,17 @@
 
 import React, { useState, ChangeEvent } from 'react';
 
-interface textInputProps {
+interface TextInputProps {
   placeholder?: string;
   initialValue?: string;
+  type?: string;
   onChange: (value: string) => void;
 }
 
-const textField: React.FC<textInputProps> = ({
+const TextField: React.FC<TextInputProps> = ({
   placeholder = 'Enter text...',
   initialValue = '',
+  type = "text",
   onChange,
 }) => {
   const [inputValue, setInputValue] = useState<string>(initialValue);
@@ -25,7 +27,8 @@ const textField: React.FC<textInputProps> = ({
 
   return (
     <input
-      type="text"
+      className='rounded-full py-1 px-5 border bg-transparent border-white'
+      type={type}
       value={initialValue}
       onChange={handleInputChange}
       placeholder={placeholder}
@@ -33,5 +36,5 @@ const textField: React.FC<textInputProps> = ({
   );
 };
 
-export default textField;
+export default TextField;
 

@@ -3,7 +3,8 @@ import useAxios from "../utils/useAxios";
 import coin from "../models/coinData";
 
 const cryptocurrenciesService = () => {
-    const baseUrl: string = `http://localhost:3000/api`;
+    // const baseUrl: string|undefined = process.env.API_URL;
+    const baseUrl: string|undefined = "http://localhost:3000/api";
     var cryptocurrenciesController : string = '/cryptocurrencies';
     const { loading, error, get, post, put, del } = useAxios(baseUrl);
 

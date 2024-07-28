@@ -31,3 +31,8 @@ body {
     text-wrap: balance;
   }
 }
+
+.text-stroke {
+  -webkit-text-stroke: 1px black;
+  color: transparent; /* Example stroke width and color */
+}
